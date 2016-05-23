@@ -163,7 +163,7 @@ func (t *SimpleChaincode) createAccount(stub *shim.ChaincodeStub, args []string)
         return nil, errors.New("createAccount accepts a single username argument")
     }
     username := args[0]
-    
+
     // Build an account object for the user
     var assetIds []string
     suffix := "000A"
@@ -174,20 +174,20 @@ func (t *SimpleChaincode) createAccount(stub *shim.ChaincodeStub, args []string)
         fmt.Println("error creating account" + account.ID)
         return nil, errors.New("Error creating account " + account.ID)
     }
-    
+
     fmt.Println("Attempting to get state of any existing account for " + account.ID)
     existingBytes, err := stub.GetState(accountPrefix + account.ID)
 	if err == nil {
-        
+
         var company Account
         err = json.Unmarshal(existingBytes, &company)
         if err != nil {
             fmt.Println("Error unmarshalling account " + account.ID + "\n--->: " + err.Error())
-            
+
             if strings.Contains(err.Error(), "unexpected end") {
                 fmt.Println("No data means existing account found for " + account.ID + ", initializing account.")
                 err = stub.PutState(accountPrefix+account.ID, accountBytes)
-                
+
                 if err == nil {
                     fmt.Println("created account" + accountPrefix + account.ID)
                     return nil, nil
@@ -203,10 +203,10 @@ func (t *SimpleChaincode) createAccount(stub *shim.ChaincodeStub, args []string)
 		    return nil, errors.New("Can't reinitialize existing user " + account.ID)
         }
     } else {
-        
+
         fmt.Println("No existing account found for " + account.ID + ", initializing account.")
         err = stub.PutState(accountPrefix+account.ID, accountBytes)
-        
+
         if err == nil {
             fmt.Println("created account" + accountPrefix + account.ID)
             return nil, nil
@@ -214,10 +214,10 @@ func (t *SimpleChaincode) createAccount(stub *shim.ChaincodeStub, args []string)
             fmt.Println("failed to create initialize account for " + account.ID)
             return nil, errors.New("failed to initialize an account for " + account.ID + " => " + err.Error())
         }
-        
+
     }
-    
-    
+
+
 }
 
 func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
@@ -243,7 +243,7 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 					"company": "company4",
 					"quantity": 2
 				}
-			],				
+			],
 			"issuer":"company2",
 			"issueDate":"1456161763790"  (current time in milliseconds as a string)
 
@@ -279,14 +279,14 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 		fmt.Println("Error Unmarshalling accountBytes")
 		return nil, errors.New("Error retrieving account " + cp.Issuer)
 	}
-	
+
 	account.AssetsIds = append(account.AssetsIds, cp.CUSIP)
 
 	// Set the issuer to be the owner of all quantity
 	var owner Owner
 	owner.Company = cp.Issuer
 	owner.Quantity = cp.Qty
-	
+
 	cp.Owners = append(cp.Owners, owner)
 
 	suffix, err := generateCUSIPSuffix(cp.IssueDate, cp.Maturity)
@@ -297,7 +297,7 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 
 	fmt.Println("Marshalling CP bytes")
 	cp.CUSIP = account.Prefix + suffix
-	
+
 	fmt.Println("Getting State on CP " + cp.CUSIP)
 	cpRxBytes, err := stub.GetState(cpPrefix+cp.CUSIP)
 	if cpRxBytes == nil {
@@ -324,8 +324,8 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 			fmt.Println("Error putting state on accountBytesToWrite")
 			return nil, errors.New("Error issuing commercial paper")
 		}
-		
-		
+
+
 		// Update the paper keys by adding the new key
 		fmt.Println("Getting Paper Keys")
 		keysBytes, err := stub.GetState("PaperKeys")
@@ -339,7 +339,7 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 			fmt.Println("Error unmarshel keys")
 			return nil, errors.New("Error unmarshalling paper keys ")
 		}
-		
+
 		fmt.Println("Appending the new key to Paper Keys")
 		foundKey := false
 		for _, key := range keys {
@@ -361,12 +361,12 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 				return nil, errors.New("Error writing the keys back")
 			}
 		}
-		
+
 		fmt.Println("Issue commercial paper %+v\n", cp)
 		return nil, nil
 	} else {
 		fmt.Println("CUSIP exists")
-		
+
 		var cprx CP
 		fmt.Println("Unmarshalling CP " + cp.CUSIP)
 		err = json.Unmarshal(cpRxBytes, &cprx)
@@ -374,16 +374,16 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 			fmt.Println("Error unmarshalling cp " + cp.CUSIP)
 			return nil, errors.New("Error unmarshalling cp " + cp.CUSIP)
 		}
-		
+
 		cprx.Qty = cprx.Qty + cp.Qty
-		
+
 		for key, val := range cprx.Owners {
 			if val.Company == cp.Issuer {
 				cprx.Owners[key].Quantity += cp.Qty
 				break
 			}
 		}
-				
+
 		cpWriteBytes, err := json.Marshal(&cprx)
 		if err != nil {
 			fmt.Println("Error marshalling cp")
@@ -402,9 +402,9 @@ func (t *SimpleChaincode) issueCommercialPaper(stub *shim.ChaincodeStub, args []
 
 
 func GetAllCPs(stub *shim.ChaincodeStub) ([]CP, error){
-	
+
 	var allCPs []CP
-	
+
 	// Get list of all the keys
 	keysBytes, err := stub.GetState("PaperKeys")
 	if err != nil {
@@ -421,18 +421,18 @@ func GetAllCPs(stub *shim.ChaincodeStub) ([]CP, error){
 	// Get all the cps
 	for _, value := range keys {
 		cpBytes, err := stub.GetState(value)
-		
+
 		var cp CP
 		err = json.Unmarshal(cpBytes, &cp)
 		if err != nil {
 			fmt.Println("Error retrieving cp " + value)
 			return nil, errors.New("Error retrieving cp " + value)
 		}
-		
+
 		fmt.Println("Appending CP" + value)
 		allCPs = append(allCPs, cp)
-	}	
-	
+	}
+
 	return allCPs, nil
 }
 
@@ -444,13 +444,13 @@ func GetCP(cpid string, stub *shim.ChaincodeStub) (CP, error){
 		fmt.Println("Error retrieving cp " + cpid)
 		return cp, errors.New("Error retrieving cp " + cpid)
 	}
-		
+
 	err = json.Unmarshal(cpBytes, &cp)
 	if err != nil {
 		fmt.Println("Error unmarshalling cp " + cpid)
 		return cp, errors.New("Error unmarshalling cp " + cpid)
 	}
-		
+
 	return cp, nil
 }
 
@@ -468,7 +468,7 @@ func GetCompany(companyID string, stub *shim.ChaincodeStub) (Account, error){
 		fmt.Println("Error unmarshalling account " + companyID + "\n err:" + err.Error())
 		return company, errors.New("Error unmarshalling account " + companyID)
 	}
-	
+
 	return company, nil
 }
 
@@ -485,10 +485,10 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		}
 	*/
 	//need one arg
-	if len(args) != 1 {
+	/*if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting commercial paper record")
 	}
-	
+
 	var tr Transaction
 
 	fmt.Println("Unmarshalling Transaction")
@@ -514,7 +514,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 	}
 
 	var fromCompany Account
-	fmt.Println("Getting State on fromCompany " + tr.FromCompany)	
+	fmt.Println("Getting State on fromCompany " + tr.FromCompany)
 	fromCompanyBytes, err := stub.GetState(accountPrefix+tr.FromCompany)
 	if err != nil {
 		fmt.Println("Account not found " + tr.FromCompany)
@@ -544,7 +544,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 	}
 
 	// Check for all the possible errors
-	ownerFound := false 
+	ownerFound := false
 	quantity := 0
 	for _, owner := range cp.Owners {
 		if owner.Company == tr.FromCompany {
@@ -552,34 +552,34 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 			quantity = owner.Quantity
 		}
 	}
-	
+
 	// If fromCompany doesn't own this paper
 	if ownerFound == false {
 		fmt.Println("The company " + tr.FromCompany + "doesn't own any of this paper")
-		return nil, errors.New("The company " + tr.FromCompany + "doesn't own any of this paper")	
+		return nil, errors.New("The company " + tr.FromCompany + "doesn't own any of this paper")
 	} else {
 		fmt.Println("The FromCompany does own this paper")
 	}
-	
+
 	// If fromCompany doesn't own enough quantity of this paper
 	if quantity < tr.Quantity {
-		fmt.Println("The company " + tr.FromCompany + "doesn't own enough of this paper")		
-		return nil, errors.New("The company " + tr.FromCompany + "doesn't own enough of this paper")			
+		fmt.Println("The company " + tr.FromCompany + "doesn't own enough of this paper")
+		return nil, errors.New("The company " + tr.FromCompany + "doesn't own enough of this paper")
 	} else {
 		fmt.Println("The FromCompany owns enough of this paper")
 	}
-	
+
 	amountToBeTransferred := float64(tr.Quantity) * cp.Par
 	amountToBeTransferred -= (amountToBeTransferred) * (cp.Discount / 100.0) * (float64(cp.Maturity) / 360.0)
-	
+
 	// If toCompany doesn't have enough cash to buy the papers
 	if toCompany.CashBalance < amountToBeTransferred {
-		fmt.Println("The company " + tr.ToCompany + "doesn't have enough cash to purchase the papers")		
-		return nil, errors.New("The company " + tr.ToCompany + "doesn't have enough cash to purchase the papers")	
+		fmt.Println("The company " + tr.ToCompany + "doesn't have enough cash to purchase the papers")
+		return nil, errors.New("The company " + tr.ToCompany + "doesn't have enough cash to purchase the papers")
 	} else {
 		fmt.Println("The ToCompany has enough money to be transferred for this paper")
 	}
-	
+
 	toCompany.CashBalance -= amountToBeTransferred
 	fromCompany.CashBalance += amountToBeTransferred
 
@@ -597,7 +597,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 //			owner.Quantity += tr.Quantity
 		}
 	}
-	
+
 	if toOwnerFound == false {
 		var newOwner Owner
 		fmt.Println("As ToOwner was not found, appending the owner to the CP")
@@ -605,7 +605,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		newOwner.Company = tr.ToCompany
 		cp.Owners = append(cp.Owners, newOwner)
 	}
-	
+
 	fromCompany.AssetsIds = append(fromCompany.AssetsIds, tr.CUSIP)
 
 	// Write everything back
@@ -621,7 +621,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		fmt.Println("Error writing the toCompany back")
 		return nil, errors.New("Error writing the toCompany back")
 	}
-		
+
 	// From company
 	fromCompanyBytesToWrite, err := json.Marshal(&fromCompany)
 	if err != nil {
@@ -634,7 +634,7 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		fmt.Println("Error writing the fromCompany back")
 		return nil, errors.New("Error writing the fromCompany back")
 	}
-	
+
 	// cp
 	cpBytesToWrite, err := json.Marshal(&cp)
 	if err != nil {
@@ -647,9 +647,9 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		fmt.Println("Error writing the cp back")
 		return nil, errors.New("Error writing the cp back")
 	}
-	
+
 	fmt.Println("Successfully completed Invoke")
-	return nil, nil
+	return nil, nil*/
 }
 
 func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
@@ -669,9 +669,9 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 			if err1 != nil {
 				fmt.Println("Error marshalling allcps")
 				return nil, err1
-			}	
+			}
 			fmt.Println("All success, returning allcps")
-			return allCPsBytes, nil		 
+			return allCPsBytes, nil
 		}
 	} else if args[0] == "GetCP" {
 		fmt.Println("Getting particular cp")
@@ -684,9 +684,9 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 			if err1 != nil {
 				fmt.Println("Error marshalling the cp")
 				return nil, err1
-			}	
+			}
 			fmt.Println("All success, returning the cp")
-			return cpBytes, nil		 
+			return cpBytes, nil
 		}
 	} else if args[0] == "GetCompany" {
 		fmt.Println("Getting the company")
@@ -699,9 +699,9 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 			if err1 != nil {
 				fmt.Println("Error marshalling the company")
 				return nil, err1
-			}	
+			}
 			fmt.Println("All success, returning the company")
-			return companyBytes, nil		 
+			return companyBytes, nil
 		}
 	} else {
 		fmt.Println("Generic Query call")
@@ -713,13 +713,13 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 		}
 
 		fmt.Println("All success, returning from generic")
-		return bytes, nil		
+		return bytes, nil
 	}
 }
 
 func (t *SimpleChaincode) Run(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("run is running " + function)
-	
+
 	if function == "issueCommercialPaper" {
 		fmt.Println("Firing issueCommercialPaper")
 		//Create an asset with some value
