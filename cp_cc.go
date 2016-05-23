@@ -648,8 +648,8 @@ func (t *SimpleChaincode) transferPaper(stub *shim.ChaincodeStub, args []string)
 		return nil, errors.New("Error writing the cp back")
 	}
 
-	fmt.Println("Successfully completed Invoke")
-	return nil, nil*/
+	fmt.Println("Successfully completed Invoke")*/
+	return nil, nil
 }
 
 func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
